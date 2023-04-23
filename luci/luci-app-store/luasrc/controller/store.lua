@@ -2,7 +2,7 @@ module("luci.controller.store", package.seeall)
 
 local myopkg = "is-opkg"
 local is_backup = "/usr/libexec/istore/backup"
-local page_index = {"admin", "store", "pages"}
+local page_index = {"admin", "system", "store"}
 
 function index()
     local function store_api(action, onlypost)
@@ -13,8 +13,7 @@ function index()
 
     local action
 
-    entry({"admin", "store"}, call("redirect_index"), _("iStore"), 31)
-    entry({"admin", "store", "pages"}, call("store_index")).leaf = true
+    entry({"admin", "system", "store"}, call("store_index"), _("iStore"), 31)
     if nixio.fs.access("/usr/lib/lua/luci/view/store/main_dev.htm") then
         entry({"admin", "store", "dev"}, call("store_dev")).leaf = true
     end
@@ -249,7 +248,7 @@ function store_action(param)
         local metapkg = pkg and (metapkgpre .. pkg) or ""
         if action == "update" or pkg then
             if action == "update" or action == "install" then
-                code, out, err = _action(myopkg, action, metapkg)
+                code, out, err = _action(myopkg, action .. " --force-overwrite --force-checksum --force-depends", metapkg)
             else
                 local meta = json_parse(fs.readfile(metadir .. "/" .. pkg .. ".json"))
                 local pkgs = {}
@@ -316,7 +315,7 @@ function store_upload()
         if string.lower(string.sub(path, -4, -1)) == ".run" then
             code, out, err = _action("sh", "-c", "ls -l \"%s\"; md5sum \"%s\" 2>/dev/null; chmod 755 \"%s\" && \"%s\"; RET=$?; rm -f \"%s\"; exit $RET" %{ path, path, path, path, path })
         else
-            code, out, err = _action("sh", "-c", "opkg install \"%s\"; RET=$?; rm -f \"%s\"; exit $RET" %{ path, path })
+            code, out, err = _action("sh", "-c", "opkg install --force-overwrite --force-checksum --force-depends \"%s\"; RET=$?; rm -f \"%s\"; exit $RET" %{ path, path })
         end
     else
         code = 500
